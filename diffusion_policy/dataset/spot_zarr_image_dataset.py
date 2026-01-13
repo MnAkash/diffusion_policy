@@ -47,6 +47,7 @@ class SpotZarrImageDataset(BaseImageDataset):
         is_val: bool = False,
         rgb_keys=("images_0",),
         lowdim_keys=("joint_states", "ee_states"),
+        use_cache: bool = False,
         max_train_episodes: Optional[int] = None,
     ):
         self.zarr_path = zarr_path
@@ -66,6 +67,7 @@ class SpotZarrImageDataset(BaseImageDataset):
         self.lowdim_keys = list(lowdim_keys)
         if len(self.lowdim_keys) == 0:
             raise ValueError("lowdim_keys must contain at least one key, e.g. ['joint_states'].")
+        self.use_cache = bool(use_cache)
 
         root = zarr.open(zarr_path, mode="r")
 
@@ -94,6 +96,14 @@ class SpotZarrImageDataset(BaseImageDataset):
                     f"Expected because rgb_keys includes '{k}'."
                 )
             self.rgb_arrays[k] = root["data"][zkey]
+
+        if self.use_cache:
+            print("[SpotZarrImageDataset] Caching arrays in memory.")
+            self.action = np.asarray(self.action)
+            for k, arr in self.lowdim_arrays.items():
+                self.lowdim_arrays[k] = np.asarray(arr)
+            for k, arr in self.rgb_arrays.items():
+                self.rgb_arrays[k] = np.asarray(arr)
 
         # safety checks
         if self.action.shape[1] != 10:

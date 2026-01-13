@@ -16,7 +16,7 @@ checkpoint:
 dataloader:
   batch_size: 64          # 240x320 is big; increase if VRAM allows
   num_workers: 8
-  persistent_workers: false
+  persistent_workers: true
   pin_memory: true
   shuffle: true
 
@@ -135,6 +135,7 @@ task:
     # These tell your dataset class which arrays to read from zarr
     rgb_keys: [images_0, images_2]
     lowdim_keys: [joint_states, ee_states]
+    use_cache: true
 
   # If you don’t have an environment runner, disable rollouts by setting a huge rollout_every.
   # Many users do this when training purely offline.
@@ -166,6 +167,6 @@ training:
 val_dataloader:
   batch_size: 64
   num_workers: 8
-  persistent_workers: false
+  persistent_workers: true
   pin_memory: true
   shuffle: false
