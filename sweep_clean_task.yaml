@@ -15,7 +15,7 @@ checkpoint:
 # ---------- dataloaders ----------
 dataloader:
   batch_size: 64          # 240x320 is big; increase if VRAM allows
-  num_workers: 8
+  num_workers: 12
   persistent_workers: true
   pin_memory: true
   shuffle: true
@@ -166,7 +166,7 @@ training:
 
 val_dataloader:
   batch_size: 64
-  num_workers: 8
+  num_workers: 12
   persistent_workers: true
   pin_memory: true
   shuffle: false
