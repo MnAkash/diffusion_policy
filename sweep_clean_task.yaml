@@ -15,7 +15,7 @@ checkpoint:
 # ---------- dataloaders ----------
 dataloader:
   batch_size: 64          # 240x320 is big; increase if VRAM allows
-  num_workers: 12
+  num_workers: 8
   persistent_workers: true
   pin_memory: true
   shuffle: true
@@ -146,7 +146,7 @@ task_name: sweep_clean
 
 # ---------- training loop ----------
 training:
-  checkpoint_every: 50
+  checkpoint_every: 100
   debug: false
   device: cuda:0
   gradient_accumulate_every: 1
@@ -154,7 +154,7 @@ training:
   lr_warmup_steps: 500
   max_train_steps: null
   max_val_steps: null
-  num_epochs: 500
+  num_epochs: 401
   resume: true
   # offline-only: avoid env rollouts
   rollout_every: 999999
@@ -162,11 +162,11 @@ training:
   seed: 42
   tqdm_interval_sec: 1.0
   use_ema: true
-  val_every: 1
+  val_every: 10
 
 val_dataloader:
   batch_size: 64
-  num_workers: 12
+  num_workers: 8
   persistent_workers: true
   pin_memory: true
   shuffle: false
