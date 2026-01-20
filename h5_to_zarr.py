@@ -37,22 +37,18 @@ Notes:
 - Quaternion order: by default expects (x, y, z, w). If your file stores (w, x, y, z),
   set QUAT_WXYZ = True to reorder.
 
-Run:
-  python h5_to_zarr.py
+Usage examples:
+  python h5_to_zarr.py data/augmented_sweep.h5
+  python h5_to_zarr.py /path/to/demo.h5 -o /path/to/demo.zarr
 """
 
+import argparse
 import os
 import shutil
 import h5py
 import numpy as np
 import zarr
 from numcodecs import Blosc
-
-# =========================
-# MANUAL SETTINGS (edit me)
-# =========================
-INPUT_H5 = "../oneshot_imitation/augmentation/data/generated_demo/spot_sweep/augmented_sweep.h5"
-OUTPUT_ZARR = "data/spot/sweep_clean_replay.zarr"
 
 # Choose which camera streams to export. You can later select them in YAML via rgb_keys.
 RGB_KEYS = ["images_0", "images_1", "images_2"]  # e.g. ["images_0"] for single cam
@@ -67,7 +63,6 @@ VERIFY = True
 
 # Compression (good defaults)
 COMPRESSOR = Blosc(cname="zstd", clevel=3, shuffle=Blosc.BITSHUFFLE)
-# =========================
 
 
 def _sorted_demo_keys(h5_data_group):
@@ -133,9 +128,14 @@ def ensure_overwrite(path: str, overwrite: bool):
             raise FileExistsError(f"{path} exists. Set OVERWRITE=True to replace it.")
 
 
-def main():
-    ensure_overwrite(OUTPUT_ZARR, OVERWRITE)
-    os.makedirs(os.path.dirname(OUTPUT_ZARR), exist_ok=True)
+def _default_output_path(input_path: str) -> str:
+    base = os.path.splitext(input_path)[0]
+    return base + ".zarr"
+
+
+def main(input_h5: str, output_zarr: str):
+    ensure_overwrite(output_zarr, OVERWRITE)
+    os.makedirs(os.path.dirname(output_zarr), exist_ok=True)
 
     # We accumulate per-demo arrays then concatenate (robust + simple).
     # If your dataset is extremely large, we can rewrite this to stream.
@@ -147,7 +147,7 @@ def main():
 
     total_T = 0
 
-    with h5py.File(INPUT_H5, "r") as f:
+    with h5py.File(input_h5, "r") as f:
         if "data" not in f:
             raise KeyError("Expected root group 'data' not found in H5.")
 
@@ -231,7 +231,7 @@ def main():
     episode_ends = np.asarray(episode_ends, dtype=np.int64)
 
     # Write Zarr
-    root = zarr.open(OUTPUT_ZARR, mode="w")
+    root = zarr.open(output_zarr, mode="w")
     g_data = root.create_group("data")
     g_meta = root.create_group("meta")
 
@@ -276,7 +276,7 @@ def main():
     )
 
     print("\n=== WROTE ZARR REPLAY ===")
-    print("Path:", OUTPUT_ZARR)
+    print("Path:", output_zarr)
     print("data/action :", action.shape, action.dtype)
     print("data/lowdim_joint_states :", lowdim_joint.shape, lowdim_joint.dtype, "(arm_q7)")
     print("data/lowdim_ee_states    :", lowdim_ee.shape, lowdim_ee.dtype, "(eef_pos3 + eef_rot6d6 + gripper1)")
@@ -286,7 +286,7 @@ def main():
     print("meta/episode_ends:", episode_ends.shape, episode_ends.dtype, "last:", episode_ends[-1])
 
     if VERIFY:
-        r = zarr.open(OUTPUT_ZARR, mode="r")
+        r = zarr.open(output_zarr, mode="r")
         T = r["data"]["action"].shape[0]
         assert r["data"]["lowdim_joint_states"].shape == (T, 7)
         assert r["data"]["lowdim_ee_states"].shape == (T, 10)
@@ -298,4 +298,19 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Convert an HDF5 dataset to a Diffusion-Policy Zarr replay.")
+    parser.add_argument("input_h5", help="Path to input .h5 file.")
+    parser.add_argument(
+        "--output",
+        "-o",
+        default=None,
+        help="Path to output .zarr (default: same folder/name as input)."
+    )
+    args = parser.parse_args()
+
+    input_h5 = args.input_h5
+    output_zarr = args.output if args.output is not None else _default_output_path(input_h5)
+
+    print(f"[INFO] Input H5: {input_h5}")
+    print(f"[INFO] Output Zarr: {output_zarr}")
+    main(input_h5, output_zarr)
