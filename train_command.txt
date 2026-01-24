@@ -1,0 +1,1 @@
+python train.py --config-dir=. --config-name=sweep_clean_task.yaml hydra.run.dir='data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}'
