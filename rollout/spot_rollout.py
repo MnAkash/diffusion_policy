@@ -5,8 +5,8 @@ Rollout a trained diffusion policy on Spot.
 Usage example:
 python rollout/spot_rollout.py \\
   --ckpt data/outputs/.../checkpoints/latest.ckpt \\
-  --image-map images_0=frontleft_fisheye_image \\
-  --image-map images_2=hand_color_image \\
+  --image-map images_0=hand_color_image \\
+  --image-map images_2=frontleft_fisheye_image \\
   --control-hz 10 \\
   --num-inference-steps 16
 
